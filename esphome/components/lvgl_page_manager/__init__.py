@@ -42,7 +42,7 @@ PAGE_SCHEMA = cv.Schema(
     }
 )
 
-MANAGER_ITEM_SCHEMA = (
+CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(PageManager),
@@ -60,52 +60,49 @@ MANAGER_ITEM_SCHEMA = (
     .extend(cv.COMPONENT_SCHEMA)
 )
 
-CONFIG_SCHEMA = cv.ensure_list(MANAGER_ITEM_SCHEMA)
-
 
 async def to_code(config):
-    for mgr_cfg in config:
-        var = cg.new_Pvariable(mgr_cfg[CONF_ID])
-        await cg.register_component(var, mgr_cfg)
+    var = cg.new_Pvariable(config[CONF_ID])
+    await cg.register_component(var, config)
 
-        # Wire LvglComponent
-        lvgl_comp = await cg.get_variable(mgr_cfg[CONF_LVGL])
-        cg.add(var.set_lvgl(lvgl_comp))
+    # Wire LvglComponent
+    lvgl_comp = await cg.get_variable(config[CONF_LVGL])
+    cg.add(var.set_lvgl(lvgl_comp))
 
-        # Sort pages for options and registration order
-        sort_mode_str = mgr_cfg.get(CONF_SORT, "by_order")
-        pages = list(mgr_cfg.get(CONF_PAGES, []))
-        if sort_mode_str == "by_order":
-            pages.sort(key=lambda p: p.get(CONF_ORDER, 0))
-        elif sort_mode_str == "by_name":
-            pages.sort(key=lambda p: p.get(CONF_FRIENDLY_NAME, ""))
-        else:  # by_page
-            pages.sort(key=lambda p: str(p.get(CONF_PAGE, "")))
+    # Sort pages for options and registration order
+    sort_mode_str = config.get(CONF_SORT, "by_order")
+    pages = list(config.get(CONF_PAGES, []))
+    if sort_mode_str == "by_order":
+        pages.sort(key=lambda p: p.get(CONF_ORDER, 0))
+    elif sort_mode_str == "by_name":
+        pages.sort(key=lambda p: p.get(CONF_FRIENDLY_NAME, ""))
+    else:  # by_page
+        pages.sort(key=lambda p: str(p.get(CONF_PAGE, "")))
 
-        # Register pages on the C++ side
-        for pg in pages:
-            page = await cg.get_variable(pg[CONF_PAGE])
-            page_id = str(pg[CONF_PAGE])
-            cg.add(var.add_page(page_id, pg[CONF_FRIENDLY_NAME], pg[CONF_ORDER], page))
+    # Register pages on the C++ side
+    for pg in pages:
+        page = await cg.get_variable(pg[CONF_PAGE])
+        page_id = str(pg[CONF_PAGE])
+        cg.add(var.add_page(page_id, pg[CONF_FRIENDLY_NAME], pg[CONF_ORDER], page))
 
-        # Build options for the select entity
-        options = [p[CONF_FRIENDLY_NAME] for p in pages]
-        await select.register_select(var, mgr_cfg[CONF_SELECT], options=options)
+    # Build options for the select entity
+    options = [p[CONF_FRIENDLY_NAME] for p in pages]
+    await select.register_select(var, config[CONF_SELECT], options=options)
 
-        # Set default page and sort mode
-        cg.add(var.set_sort_mode(SORT_MODES[sort_mode_str]))
-        if mgr_cfg.get(CONF_DEFAULT_PAGE):
-            cg.add(var.set_default_page(mgr_cfg[CONF_DEFAULT_PAGE]))
+    # Set default page and sort mode
+    cg.add(var.set_sort_mode(SORT_MODES[sort_mode_str]))
+    if config.get(CONF_DEFAULT_PAGE):
+        cg.add(var.set_default_page(config[CONF_DEFAULT_PAGE]))
 
-        # Optional buttons
-        if CONF_NEXT_BUTTON in mgr_cfg:
-            next_btn = cg.new_Pvariable(mgr_cfg[CONF_NEXT_BUTTON][CONF_ID])
-            await button.register_button(next_btn, mgr_cfg[CONF_NEXT_BUTTON])
-            cg.add(next_btn.set_manager(var))
-            cg.add(var.set_next_button(next_btn))
+    # Optional buttons
+    if CONF_NEXT_BUTTON in config:
+        next_btn = cg.new_Pvariable(config[CONF_NEXT_BUTTON][CONF_ID])
+        await button.register_button(next_btn, config[CONF_NEXT_BUTTON])
+        cg.add(next_btn.set_manager(var))
+        cg.add(var.set_next_button(next_btn))
 
-        if CONF_PREV_BUTTON in mgr_cfg:
-            prev_btn = cg.new_Pvariable(mgr_cfg[CONF_PREV_BUTTON][CONF_ID])
-            await button.register_button(prev_btn, mgr_cfg[CONF_PREV_BUTTON])
-            cg.add(prev_btn.set_manager(var))
-            cg.add(var.set_prev_button(prev_btn))
+    if CONF_PREV_BUTTON in config:
+        prev_btn = cg.new_Pvariable(config[CONF_PREV_BUTTON][CONF_ID])
+        await button.register_button(prev_btn, config[CONF_PREV_BUTTON])
+        cg.add(prev_btn.set_manager(var))
+        cg.add(var.set_prev_button(prev_btn))
