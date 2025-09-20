@@ -4,7 +4,10 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import select, button, lvgl
+from esphome.components.lvgl.defines import LV_ANIM
+from esphome.components.lvgl.lv_validation import lv_milliseconds
 from esphome.const import CONF_ID
+from esphome import automation
 
 CODEOWNERS = ["@your-gh-handle"]
 DEPENDENCIES = ["lvgl"]
@@ -29,6 +32,9 @@ CONF_NEXT_BUTTON = "next_button"
 CONF_PREV_BUTTON = "prev_button"
 
 CONF_LVGL = "lvgl"
+CONF_ANIMATION = "animation"
+CONF_TIME = "time"
+CONF_PAGE_MANAGER_ID = "page_manager_id"
 
 SORT_MODES = {"by_order": 0, "by_name": 1, "by_page": 2}
 
@@ -45,7 +51,7 @@ PAGE_SCHEMA = cv.Schema(
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(PageManager),
+            cv.Optional(CONF_ID, default="page_manager"): cv.declare_id(PageManager),
 
             cv.GenerateID(CONF_LVGL): cv.use_id(LvglComponent),
 
@@ -106,3 +112,73 @@ async def to_code(config):
         await button.register_button(prev_btn, config[CONF_PREV_BUTTON])
         cg.add(prev_btn.set_manager(var))
         cg.add(var.set_prev_button(prev_btn))
+
+
+# Actions
+NextPageAction = lvpm_ns.class_("NextPageAction", automation.Action)
+PrevPageAction = lvpm_ns.class_("PrevPageAction", automation.Action)
+ShowPageAction = lvpm_ns.class_("ShowPageAction", automation.Action)
+
+NEXT_PAGE_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Optional(CONF_ANIMATION, default="OVER_LEFT"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+    }
+)
+
+PREV_PAGE_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Optional(CONF_ANIMATION, default="OVER_RIGHT"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+    }
+)
+
+SHOW_PAGE_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Required(CONF_PAGE): cv.string,
+        cv.Optional(CONF_ANIMATION, default="NONE"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+    }
+)
+
+@automation.register_action("lvgl_page_manager.page.next", NextPageAction, NEXT_PAGE_ACTION_SCHEMA)
+async def next_page_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+    return var
+
+@automation.register_action("lvgl_page_manager.page.previous", PrevPageAction, PREV_PAGE_ACTION_SCHEMA)
+async def prev_page_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+    return var
+
+@automation.register_action("lvgl_page_manager.page.show", ShowPageAction, SHOW_PAGE_ACTION_SCHEMA)
+async def show_page_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+    if CONF_PAGE in config:
+        template_ = await cg.templatable(config[CONF_PAGE], args, cg.std_string)
+        cg.add(var.set_page(template_))
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+    return var

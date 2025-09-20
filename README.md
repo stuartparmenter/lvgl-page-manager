@@ -134,3 +134,90 @@ lvgl_page_manager:
 ```
 
 This creates a page manager with two pages that can be controlled from Home Assistant or the navigation buttons.
+
+## Actions
+
+The component provides actions that mimic ESPHome's built-in LVGL page actions but work specifically with your registered pages. These actions ensure your page manager stays synchronized with page changes.
+
+### Available Actions
+
+#### Next Page
+Navigate to the next page in the list:
+
+```yaml
+# Simple syntax
+on_...:
+  - lvgl_page_manager.page.next:
+
+# With animation and timing
+on_...:
+  - lvgl_page_manager.page.next:
+      animation: over_left
+      time: 300ms
+```
+
+#### Previous Page
+Navigate to the previous page in the list:
+
+```yaml
+# Simple syntax
+on_...:
+  - lvgl_page_manager.page.previous:
+
+# With animation and timing
+on_...:
+  - lvgl_page_manager.page.previous:
+      animation: out_right
+      time: 250ms
+```
+
+#### Show Specific Page
+Navigate to a specific page by ID:
+
+```yaml
+# Simple syntax
+on_...:
+  - lvgl_page_manager.page.show: dashboard_page
+
+# With animation and timing
+on_...:
+  - lvgl_page_manager.page.show:
+      page: settings_page
+      animation: fade_in
+      time: 400ms
+```
+
+### Animation Options
+
+All actions support the same animation types as ESPHome's built-in LVGL actions:
+
+- `none` - No animation (immediate switch)
+- `over_left`, `over_right`, `over_top`, `over_bottom` - New page slides over current
+- `move_left`, `move_right`, `move_top`, `move_bottom` - Both pages move together
+- `fade_in`, `fade_out` - Fade transitions
+- `out_left`, `out_right`, `out_top`, `out_bottom` - Current page slides out
+
+**Default values:**
+- `animation`: `over_left` for next, `over_right` for previous, `none` for show
+- `time`: `50ms`
+
+### Why Use These Actions?
+
+**Instead of using:**
+```yaml
+# This bypasses your page manager
+on_...:
+  - lvgl.page.next: my_lvgl
+```
+
+**Use:**
+```yaml
+# This keeps your page manager synchronized
+on_...:
+  - lvgl_page_manager.page.next:  # ID optional when only one page manager
+```
+
+The custom actions ensure that:
+- Your page manager's select entity updates correctly
+- Page navigation respects your registered pages
+- You maintain control over page switching logic

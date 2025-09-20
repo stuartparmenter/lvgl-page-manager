@@ -52,34 +52,34 @@ void PageManager::control(const std::string &value) {
   this->apply_index_(idx);
 }
 
-void PageManager::show_page(const std::string &page_id) {
+void PageManager::show_page(const std::string &page_id, lv_scr_load_anim_t animation, uint32_t time_ms) {
   int idx = this->index_by_page_id_(page_id);
   if (idx < 0) {
     ESP_LOGW(TAG, "Page ID '%s' not found", page_id.c_str());
     return;
   }
-  this->apply_index_(idx);
+  this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::next() {
+void PageManager::next(lv_scr_load_anim_t animation, uint32_t time_ms) {
   if (pages_.empty()) return;
   int n = (int) pages_.size();
   int idx = (current_index_ < 0) ? 0 : (current_index_ + 1) % n;
-  this->apply_index_(idx);
+  this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::previous() {
+void PageManager::previous(lv_scr_load_anim_t animation, uint32_t time_ms) {
   if (pages_.empty()) return;
   int n = (int) pages_.size();
   int idx = (current_index_ < 0) ? 0 : (current_index_ - 1 + n) % n;
-  this->apply_index_(idx);
+  this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::apply_index_(int idx) {
+void PageManager::apply_index_(int idx, lv_scr_load_anim_t animation, uint32_t time_ms) {
   if (idx < 0 || idx >= (int) pages_.size()) return;
   current_index_ = idx;
   auto &p = pages_[idx];
-  this->show_lvgl_page_(p.page);
+  this->show_lvgl_page_(p.page, animation, time_ms);
   this->publish_state(p.name);
 }
 
@@ -97,7 +97,7 @@ int PageManager::index_by_name_(const std::string &name) const {
   return -1;
 }
 
-void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page) {
+void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page, lv_scr_load_anim_t animation, uint32_t time_ms) {
   if (page == nullptr) {
     ESP_LOGW(TAG, "Page is null; cannot show page");
     return;
@@ -107,7 +107,7 @@ void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page) {
     return;
   }
   size_t idx = page->index;
-  lvgl_->show_page(idx, LV_SCR_LOAD_ANIM_NONE, 0);
+  lvgl_->show_page(idx, animation, time_ms);
 }
 
 
