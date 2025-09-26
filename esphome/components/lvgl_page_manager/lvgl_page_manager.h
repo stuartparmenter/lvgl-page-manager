@@ -82,7 +82,7 @@ class PrevButton : public button::Button {
 };
 
 // Actions
-class NextPageAction : public Action<>, public Parented<PageManager> {
+class NextPageAction : public esphome::Action<>, public Parented<PageManager> {
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
@@ -92,7 +92,7 @@ class NextPageAction : public Action<>, public Parented<PageManager> {
   uint32_t time_;
 };
 
-class PrevPageAction : public Action<>, public Parented<PageManager> {
+class PrevPageAction : public esphome::Action<>, public Parented<PageManager> {
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }

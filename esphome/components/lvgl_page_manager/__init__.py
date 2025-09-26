@@ -146,7 +146,7 @@ SHOW_PAGE_ACTION_SCHEMA = cv.Schema(
 
 @automation.register_action("lvgl_page_manager.page.next", NextPageAction, NEXT_PAGE_ACTION_SCHEMA)
 async def next_page_action_to_code(config, action_id, template_arg, args):
-    var = cg.new_Pvariable(action_id, template_arg)
+    var = cg.new_Pvariable(action_id)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
     if CONF_ANIMATION in config:
         animation = await LV_ANIM.process(config[CONF_ANIMATION])
@@ -158,7 +158,7 @@ async def next_page_action_to_code(config, action_id, template_arg, args):
 
 @automation.register_action("lvgl_page_manager.page.previous", PrevPageAction, PREV_PAGE_ACTION_SCHEMA)
 async def prev_page_action_to_code(config, action_id, template_arg, args):
-    var = cg.new_Pvariable(action_id, template_arg)
+    var = cg.new_Pvariable(action_id)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
     if CONF_ANIMATION in config:
         animation = await LV_ANIM.process(config[CONF_ANIMATION])
