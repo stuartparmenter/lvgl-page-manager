@@ -37,12 +37,14 @@ class PageManager : public Component, public select::Select {
   void set_next_button(button::Button *b) { this->next_btn_ = b; }
   void set_prev_button(button::Button *b) { this->prev_btn_ = b; }
 
-  // Select API
   void setup() override;
   void dump_config() override;
+  float get_setup_priority() const override { return setup_priority::BEFORE_CONNECTION; }
+
+  // Select API
   void control(const std::string &value) override;
 
-  // Convenience methods you already had
+  // Convenience methods
   void show_page(const std::string &page_id, lv_scr_load_anim_t animation = LV_SCR_LOAD_ANIM_NONE, uint32_t time_ms = 50);
   void next(lv_scr_load_anim_t animation = LV_SCR_LOAD_ANIM_NONE, uint32_t time_ms = 50);
   void previous(lv_scr_load_anim_t animation = LV_SCR_LOAD_ANIM_NONE, uint32_t time_ms = 50);
