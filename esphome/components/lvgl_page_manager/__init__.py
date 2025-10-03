@@ -6,7 +6,7 @@ import esphome.config_validation as cv
 from esphome.components import select, button, lvgl
 from esphome.components.lvgl.defines import LV_ANIM
 from esphome.components.lvgl.lv_validation import lv_milliseconds
-from esphome.const import CONF_ID
+from esphome.const import CONF_ID, CONF_TRIGGER_ID
 from esphome import automation
 
 CODEOWNERS = ["@your-gh-handle"]
@@ -35,8 +35,13 @@ CONF_LVGL = "lvgl"
 CONF_ANIMATION = "animation"
 CONF_TIME = "time"
 CONF_PAGE_MANAGER_ID = "page_manager_id"
+CONF_DURATION = "duration"
+CONF_ON_PUSH = "on_push"
+CONF_ON_POP = "on_pop"
+CONF_PUSH_MODE = "push_mode"
 
 SORT_MODES = {"by_order": 0, "by_name": 1, "by_page": 2}
+PUSH_MODES = {"stack": 0, "replace": 1}
 
 SELECT_SCHEMA = select.select_schema(PageManager)
 
@@ -58,6 +63,7 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_SELECT): SELECT_SCHEMA,
             cv.Optional(CONF_DEFAULT_PAGE, default=""): cv.string,
             cv.Optional(CONF_SORT, default="by_order"): cv.enum(SORT_MODES, lower=True),
+            cv.Optional(CONF_PUSH_MODE, default="stack"): cv.enum(PUSH_MODES, lower=True),
             cv.Optional(CONF_PAGES, default=[]): cv.ensure_list(PAGE_SCHEMA),
             cv.Optional(CONF_NEXT_BUTTON): button.button_schema(NextButton),
             cv.Optional(CONF_PREV_BUTTON): button.button_schema(PrevButton),
@@ -95,8 +101,10 @@ async def to_code(config):
     options = [p[CONF_FRIENDLY_NAME] for p in pages]
     await select.register_select(var, config[CONF_SELECT], options=options)
 
-    # Set default page and sort mode
+    # Set default page, sort mode, and push mode
     cg.add(var.set_sort_mode(SORT_MODES[sort_mode_str]))
+    push_mode_str = config.get(CONF_PUSH_MODE, "stack")
+    cg.add(var.set_push_mode(PUSH_MODES[push_mode_str]))
     if config.get(CONF_DEFAULT_PAGE):
         cg.add(var.set_default_page(config[CONF_DEFAULT_PAGE]))
 
@@ -114,10 +122,17 @@ async def to_code(config):
         cg.add(var.set_prev_button(prev_btn))
 
 
+# Triggers
+PushTrigger = lvpm_ns.class_("PushTrigger", automation.Trigger.template())
+PopTrigger = lvpm_ns.class_("PopTrigger", automation.Trigger.template())
+
 # Actions
 NextPageAction = lvpm_ns.class_("NextPageAction", automation.Action)
 PrevPageAction = lvpm_ns.class_("PrevPageAction", automation.Action)
 ShowPageAction = lvpm_ns.class_("ShowPageAction", automation.Action)
+PushPageAction = lvpm_ns.class_("PushPageAction", automation.Action)
+PopPageAction = lvpm_ns.class_("PopPageAction", automation.Action)
+ClearStackAction = lvpm_ns.class_("ClearStackAction", automation.Action)
 
 NEXT_PAGE_ACTION_SCHEMA = cv.Schema(
     {
@@ -146,7 +161,7 @@ SHOW_PAGE_ACTION_SCHEMA = cv.Schema(
 
 @automation.register_action("lvgl_page_manager.page.next", NextPageAction, NEXT_PAGE_ACTION_SCHEMA)
 async def next_page_action_to_code(config, action_id, template_arg, args):
-    var = cg.new_Pvariable(action_id)
+    var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
     if CONF_ANIMATION in config:
         animation = await LV_ANIM.process(config[CONF_ANIMATION])
@@ -158,7 +173,7 @@ async def next_page_action_to_code(config, action_id, template_arg, args):
 
 @automation.register_action("lvgl_page_manager.page.previous", PrevPageAction, PREV_PAGE_ACTION_SCHEMA)
 async def prev_page_action_to_code(config, action_id, template_arg, args):
-    var = cg.new_Pvariable(action_id)
+    var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
     if CONF_ANIMATION in config:
         animation = await LV_ANIM.process(config[CONF_ANIMATION])
@@ -181,4 +196,108 @@ async def show_page_action_to_code(config, action_id, template_arg, args):
     if CONF_TIME in config:
         time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
         cg.add(var.set_time(time))
+    return var
+
+# Push/Pop Actions
+PUSH_PAGE_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Required(CONF_PAGE): cv.templatable(cv.string),
+        cv.Required(CONF_DURATION): cv.templatable(cv.positive_time_period_milliseconds),
+        cv.Optional(CONF_ANIMATION, default="NONE"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+        cv.Optional(CONF_ON_PUSH): automation.validate_automation(
+            {
+                cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(PushTrigger),
+            }
+        ),
+        cv.Optional(CONF_ON_POP): automation.validate_automation(
+            {
+                cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(PopTrigger),
+            }
+        ),
+    }
+)
+
+POP_PAGE_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Optional(CONF_ANIMATION, default="NONE"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+    }
+)
+
+CLEAR_STACK_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_PAGE_MANAGER_ID, default="page_manager"): cv.use_id(PageManager),
+        cv.Optional(CONF_ANIMATION, default="NONE"): LV_ANIM.one_of,
+        cv.Optional(CONF_TIME, default="50ms"): lv_milliseconds,
+    }
+)
+
+@automation.register_action("lvgl_page_manager.page.push", PushPageAction, PUSH_PAGE_ACTION_SCHEMA)
+async def push_page_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+
+    paren = await cg.get_variable(config[CONF_PAGE_MANAGER_ID])
+
+    if CONF_PAGE in config:
+        template_ = await cg.templatable(config[CONF_PAGE], args, cg.std_string)
+        cg.add(var.set_page(template_))
+
+    if CONF_DURATION in config:
+        duration = await cg.templatable(config[CONF_DURATION], args, cg.uint32)
+        cg.add(var.set_duration(duration))
+
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+
+    if CONF_ON_PUSH in config:
+        for conf in config[CONF_ON_PUSH]:
+            trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], template_arg, paren)
+            await automation.build_automation(trigger, args, conf)
+            cg.add(var.set_on_push_trigger(trigger))
+
+    if CONF_ON_POP in config:
+        for conf in config[CONF_ON_POP]:
+            trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], template_arg, paren)
+            await automation.build_automation(trigger, args, conf)
+            cg.add(var.set_on_pop_trigger(trigger))
+
+    return var
+
+@automation.register_action("lvgl_page_manager.page.pop", PopPageAction, POP_PAGE_ACTION_SCHEMA)
+async def pop_page_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+
+    return var
+
+@automation.register_action("lvgl_page_manager.page.clear", ClearStackAction, CLEAR_STACK_ACTION_SCHEMA)
+async def clear_stack_action_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
+
+    if CONF_ANIMATION in config:
+        animation = await LV_ANIM.process(config[CONF_ANIMATION])
+        cg.add(var.set_animation(animation))
+
+    if CONF_TIME in config:
+        time = await cg.templatable(config[CONF_TIME], args, cg.uint32)
+        cg.add(var.set_time(time))
+
     return var
