@@ -89,11 +89,9 @@ class PageManager : public Component, public select::Select {
   int index_by_name_(const std::string &name) const;
   void cancel_push_();  // Cancel active push and fire all on_pop triggers
 
-
  private:
   esphome::lvgl::LvglComponent *lvgl_{nullptr};
   std::vector<PageEntry> pages_;
-  std::vector<std::string> option_names_;
   int current_index_{-1};
   uint8_t sort_mode_{0};
   uint8_t push_mode_{0};  // 0=stack, 1=replace

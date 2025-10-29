@@ -11,11 +11,10 @@ void PageManager::set_default_page(const std::string &page_id) { this->default_p
 void PageManager::set_sort_mode(uint8_t mode) { this->sort_mode_ = mode; }
 void PageManager::set_push_mode(uint8_t mode) { this->push_mode_ = mode; }
 void PageManager::set_lvgl(esphome::lvgl::LvglComponent *lvgl) { this->lvgl_ = lvgl; }
+
 void PageManager::add_page(const std::string &page_id, const std::string &name, int order, esphome::lvgl::LvPageType *page) {
   PageEntry e{page_id, name, order, page};
   pages_.push_back(e);
-  option_names_.push_back(name);
-  this->traits.set_options(option_names_);
 }
 
 void PageManager::setup() {
