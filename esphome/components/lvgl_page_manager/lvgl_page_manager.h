@@ -9,6 +9,7 @@
 #include "esphome/components/button/button.h"
 #include "esphome/components/lvgl/lvgl_esphome.h"
 #include "esphome/core/automation.h"
+#include "esphome/core/version.h"
 
 
 #include <string>
@@ -126,7 +127,13 @@ template<typename... Ts> class NextPageAction : public Action<Ts...>, public Par
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
-  void play(Ts... x) override { this->parent_->next(this->animation_, this->time_); }
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
+  void play(Ts... x) override {
+#endif
+    this->parent_->next(this->animation_, this->time_);
+  }
  protected:
   lv_scr_load_anim_t animation_;
   uint32_t time_;
@@ -136,7 +143,13 @@ template<typename... Ts> class PrevPageAction : public Action<Ts...>, public Par
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
-  void play(Ts... x) override { this->parent_->previous(this->animation_, this->time_); }
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
+  void play(Ts... x) override {
+#endif
+    this->parent_->previous(this->animation_, this->time_);
+  }
  protected:
   lv_scr_load_anim_t animation_;
   uint32_t time_;
@@ -148,7 +161,11 @@ template<typename... Ts> class ShowPageAction : public Action<Ts...>, public Par
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
 
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
   void play(Ts... x) override {
+#endif
     auto page_id = this->page_.value(x...);
     this->parent_->show_page(page_id, this->animation_, this->time_);
   }
@@ -166,7 +183,11 @@ template<typename... Ts> class PushPageAction : public Action<Ts...>, public Par
   void set_on_push_trigger(PushTrigger<Ts...> *trigger) { this->on_push_trigger_ = trigger; }
   void set_on_pop_trigger(PopTrigger<Ts...> *trigger) { this->on_pop_trigger_ = trigger; }
 
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
   void play(Ts... x) override {
+#endif
     auto page_id = this->page_.value(x...);
     auto duration = this->duration_.value(x...);
 
@@ -194,7 +215,13 @@ template<typename... Ts> class PopPageAction : public Action<Ts...>, public Pare
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
-  void play(Ts... x) override { this->parent_->pop_page(this->animation_, this->time_); }
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
+  void play(Ts... x) override {
+#endif
+    this->parent_->pop_page(this->animation_, this->time_);
+  }
  protected:
   lv_scr_load_anim_t animation_;
   uint32_t time_;
@@ -204,7 +231,13 @@ template<typename... Ts> class ClearStackAction : public Action<Ts...>, public P
  public:
   void set_animation(lv_scr_load_anim_t anim) { this->animation_ = anim; }
   void set_time(uint32_t time) { this->time_ = time; }
-  void play(Ts... x) override { this->parent_->clear_stack(this->animation_, this->time_); }
+#if ESPHOME_VERSION_CODE >= VERSION_CODE(2025, 11, 0)
+  void play(const Ts&... x) override {
+#else
+  void play(Ts... x) override {
+#endif
+    this->parent_->clear_stack(this->animation_, this->time_);
+  }
  protected:
   lv_scr_load_anim_t animation_;
   uint32_t time_;
