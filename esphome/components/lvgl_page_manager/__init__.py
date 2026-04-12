@@ -159,7 +159,7 @@ SHOW_PAGE_ACTION_SCHEMA = cv.Schema(
     }
 )
 
-@automation.register_action("lvgl_page_manager.page.next", NextPageAction, NEXT_PAGE_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.next", NextPageAction, NEXT_PAGE_ACTION_SCHEMA, synchronous=True)
 async def next_page_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
@@ -171,7 +171,7 @@ async def next_page_action_to_code(config, action_id, template_arg, args):
         cg.add(var.set_time(time))
     return var
 
-@automation.register_action("lvgl_page_manager.page.previous", PrevPageAction, PREV_PAGE_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.previous", PrevPageAction, PREV_PAGE_ACTION_SCHEMA, synchronous=True)
 async def prev_page_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
@@ -183,7 +183,7 @@ async def prev_page_action_to_code(config, action_id, template_arg, args):
         cg.add(var.set_time(time))
     return var
 
-@automation.register_action("lvgl_page_manager.page.show", ShowPageAction, SHOW_PAGE_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.show", ShowPageAction, SHOW_PAGE_ACTION_SCHEMA, synchronous=True)
 async def show_page_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
@@ -235,7 +235,7 @@ CLEAR_STACK_ACTION_SCHEMA = cv.Schema(
     }
 )
 
-@automation.register_action("lvgl_page_manager.page.push", PushPageAction, PUSH_PAGE_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.push", PushPageAction, PUSH_PAGE_ACTION_SCHEMA, synchronous=False)
 async def push_page_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
@@ -272,7 +272,7 @@ async def push_page_action_to_code(config, action_id, template_arg, args):
 
     return var
 
-@automation.register_action("lvgl_page_manager.page.pop", PopPageAction, POP_PAGE_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.pop", PopPageAction, POP_PAGE_ACTION_SCHEMA, synchronous=True)
 async def pop_page_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
@@ -287,7 +287,7 @@ async def pop_page_action_to_code(config, action_id, template_arg, args):
 
     return var
 
-@automation.register_action("lvgl_page_manager.page.clear", ClearStackAction, CLEAR_STACK_ACTION_SCHEMA)
+@automation.register_action("lvgl_page_manager.page.clear", ClearStackAction, CLEAR_STACK_ACTION_SCHEMA, synchronous=True)
 async def clear_stack_action_to_code(config, action_id, template_arg, args):
     var = cg.new_Pvariable(action_id, template_arg)
     await cg.register_parented(var, config[CONF_PAGE_MANAGER_ID])
