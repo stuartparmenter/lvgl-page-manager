@@ -2,6 +2,11 @@
 
 An ESPHome component that provides page management functionality for LVGL displays. Switch between different LVGL pages through a Home Assistant select entity and optional navigation buttons.
 
+## Requirements
+
+- **ESPHome:** 2026.4.0 or newer (bundles LVGL 9.5)
+- **LVGL:** 9.5 (ESPHome's built-in LVGL integration)
+
 ## Features
 
 - **Modular page registration** across multiple YAML files

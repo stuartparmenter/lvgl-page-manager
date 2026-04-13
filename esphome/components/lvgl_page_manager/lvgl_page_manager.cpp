@@ -55,7 +55,7 @@ void PageManager::control(const std::string &value) {
   this->apply_index_(idx);
 }
 
-void PageManager::show_page(const std::string &page_id, lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::show_page(const std::string &page_id, lv_screen_load_anim_t animation, uint32_t time_ms) {
   // Cancel any active push before manual navigation
   this->cancel_push_();
 
@@ -67,7 +67,7 @@ void PageManager::show_page(const std::string &page_id, lv_scr_load_anim_t anima
   this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::next(lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::next(lv_screen_load_anim_t animation, uint32_t time_ms) {
   // Cancel any active push before manual navigation
   this->cancel_push_();
 
@@ -77,7 +77,7 @@ void PageManager::next(lv_scr_load_anim_t animation, uint32_t time_ms) {
   this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::previous(lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::previous(lv_screen_load_anim_t animation, uint32_t time_ms) {
   // Cancel any active push before manual navigation
   this->cancel_push_();
 
@@ -87,7 +87,7 @@ void PageManager::previous(lv_scr_load_anim_t animation, uint32_t time_ms) {
   this->apply_index_(idx, animation, time_ms);
 }
 
-void PageManager::apply_index_(int idx, lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::apply_index_(int idx, lv_screen_load_anim_t animation, uint32_t time_ms) {
   if (idx < 0 || idx >= (int) pages_.size()) return;
   current_index_ = idx;
   auto &p = pages_[idx];
@@ -109,7 +109,7 @@ int PageManager::index_by_name_(const std::string &name) const {
   return -1;
 }
 
-void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page, lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page, lv_screen_load_anim_t animation, uint32_t time_ms) {
   if (page == nullptr) {
     ESP_LOGW(TAG, "Page is null; cannot show page");
     return;
@@ -122,7 +122,7 @@ void PageManager::show_lvgl_page_(esphome::lvgl::LvPageType *page, lv_scr_load_a
   lvgl_->show_page(idx, animation, time_ms);
 }
 
-void PageManager::push_page(const std::string &page_id, uint32_t duration_ms, lv_scr_load_anim_t animation, uint32_t time_ms, std::function<void()> on_push, std::function<void()> on_pop) {
+void PageManager::push_page(const std::string &page_id, uint32_t duration_ms, lv_screen_load_anim_t animation, uint32_t time_ms, std::function<void()> on_push, std::function<void()> on_pop) {
   int idx = this->index_by_page_id_(page_id);
   if (idx < 0) {
     ESP_LOGW(TAG, "Push failed: page ID '%s' not found", page_id.c_str());
@@ -192,7 +192,7 @@ void PageManager::push_page(const std::string &page_id, uint32_t duration_ms, lv
   ESP_LOGD(TAG, "Pushed page '%s' for %u ms (stack depth: %u)", page_id.c_str(), duration_ms, (unsigned) push_stack_.size());
 }
 
-void PageManager::pop_page(lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::pop_page(lv_screen_load_anim_t animation, uint32_t time_ms) {
   if (push_stack_.empty()) {
     ESP_LOGW(TAG, "Pop called but stack is empty");
     return;
@@ -223,7 +223,7 @@ void PageManager::pop_page(lv_scr_load_anim_t animation, uint32_t time_ms) {
       this->base_page_index_.reset();
 
       // Use provided animation or the entry's pop animation
-      lv_scr_load_anim_t anim = (animation != LV_SCR_LOAD_ANIM_NONE) ? animation : entry.pop_animation;
+      lv_screen_load_anim_t anim = (animation != LV_SCREEN_LOAD_ANIM_NONE) ? animation : entry.pop_animation;
       uint32_t time = (time_ms != 50) ? time_ms : entry.pop_time_ms;
 
       this->apply_index_(base_idx, anim, time);
@@ -234,7 +234,7 @@ void PageManager::pop_page(lv_scr_load_anim_t animation, uint32_t time_ms) {
     auto &next_entry = push_stack_.back();
 
     // Use provided animation or the entry's pop animation
-    lv_scr_load_anim_t anim = (animation != LV_SCR_LOAD_ANIM_NONE) ? animation : entry.pop_animation;
+    lv_screen_load_anim_t anim = (animation != LV_SCREEN_LOAD_ANIM_NONE) ? animation : entry.pop_animation;
     uint32_t time = (time_ms != 50) ? time_ms : entry.pop_time_ms;
 
     this->apply_index_(next_entry.page_index, anim, time);
@@ -251,7 +251,7 @@ void PageManager::pop_page(lv_scr_load_anim_t animation, uint32_t time_ms) {
   }
 }
 
-void PageManager::clear_stack(lv_scr_load_anim_t animation, uint32_t time_ms) {
+void PageManager::clear_stack(lv_screen_load_anim_t animation, uint32_t time_ms) {
   if (push_stack_.empty()) {
     ESP_LOGD(TAG, "Clear stack called but stack is empty");
     return;
