@@ -146,8 +146,14 @@ void PageManager::push_page(const std::string &page_id, uint32_t duration_ms, lv
 
   // If stack is empty, save current page as base
   if (push_stack_.empty()) {
-    this->base_page_index_ = this->current_index_;
-    ESP_LOGD(TAG, "Saving base page index: %d", this->current_index_);
+    // Only save the base if one isn't already recorded. In replace mode the
+    // previous entry was just popped (leaving the stack empty), so current_index_
+    // is the page being replaced, not the original base. base_page_index_ is
+    // reset on full pop / clear_stack / cancel, so a new push sequence still saves.
+    if (!this->base_page_index_.has_value()) {
+      this->base_page_index_ = this->current_index_;
+      ESP_LOGD(TAG, "Saving base page index: %d", this->current_index_);
+    }
   } else {
     // Stack mode: pause current timer and calculate remaining time
     if (this->timeout_active_) {
